@@ -15,6 +15,14 @@ def main(train_path, eval_path, pred_path):
     x_train, y_train = util.load_dataset(train_path, add_intercept=True)
 
     # *** START CODE HERE ***
+    x_eval, y_eval = util.load_dataset(eval_path, add_intercept=True)
+
+    logreg = LogisticRegression()
+    logreg.fit(x_train, y_train)
+    print("Theta is: ", logreg.theta)
+    print("The model accuracy is: ", logreg.predict(x_eval))
+
+
     # *** END CODE HERE ***
 
 
@@ -35,6 +43,33 @@ class LogisticRegression(LinearModel):
             y: Training example labels. Shape (m,).
         """
         # *** START CODE HERE ***
+        def h(theta, x):
+            return 1 / (1 + np.exp(-np.dot(x, theta)))
+        
+        def gradient(theta, x, y):
+            m, _ = x.shape()
+            return -1 / m * np.dot(x.T, (y - h(theta, x))) 
+        
+        def hessian(theta, x):
+            m, _ = x.shape()
+            return 1 / m * np.dot(x.T, h(theta, x)*(1 - h(theta, x))*x)
+        
+        def next_theta(theta, x, y):
+            return theta - np.dot(np.linalg.inv(hessian(theta, x)), gradient(theta, x, y))
+        
+        m,n = x.shape()
+
+        if self.theta is None:
+            self.theta = np.zeros(n)
+        
+        old_theta = self.theta
+        new_theta = next_theta(self.theta, x, y)
+        while np.linalg.norm(new_theta-old_theta, 1) >= self.eps:
+            old_theta = new_theta
+            new_theta = next_theta(self.theta, x, y)
+
+        self.theta = new_theta
+
         # *** END CODE HERE ***
 
     def predict(self, x):
@@ -47,4 +82,5 @@ class LogisticRegression(LinearModel):
             Outputs of shape (m,).
         """
         # *** START CODE HERE ***
+        return 1 / (1 + np.exp(-x.dot(self.theta)))
         # *** END CODE HERE ***
